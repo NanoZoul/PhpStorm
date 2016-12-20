@@ -32,12 +32,42 @@ $app->get('/usuarios/pic',function($request, $response, $args){
 });
 
 
-$app->post('/pic/enviar',function($picRecibido, $response){
-    //$pic = new Pic();
-    //$pic->deviceid = $request->deviceId;
-    //$pic->longitude = "3";
-    //$pic->latitude = $args->latitude;
-    //$pic->save();
+$app->post('/pic/enviar',function($request, $response, $args){
+    //Decodificar imagen
+    $imagen = $request->getParam('imagen');
+    $img = base64_decode($imagen);
+    //Crear archivo de imagen
+    $archivo = $request->getParam('deviceId').$request->getParam('fecha');
+    $path = 'imagenes/'.$archivo.".png";
+    $file = fopen($path,'wb');
+    fwrite($file, $img);
+    fclose($file);
+
+    //Ingreso de pic a la base de datos
+    $pic = new Pic();
+    $pic -> deviceId = $request->getParam('deviceId');
+    $pic -> fecha = $request->getParam('fecha');
+    $pic -> url = $path;
+    $pic -> latitude = $request->getParam('latitude');
+    $pic -> longitude = $request->getParam('longitude');
+    $pic -> positive = $request->getParam('positive');
+    $pic -> negative = $request->getParam('negative');
+    $pic -> warning = $request->getParam('warning');
+    $pic -> imagen = $request->getParam('imagen');
+    $pic -> save();
+
+
+    //Seleccionar un pic al azar
+    $random = mt_rand(1, 10);
+    $pic2 = Pic::first();
+    //Armar el twin entre ambos pic
+    $twin = new Twin();
+    $twin->local = $pic;
+    $twin->remote = $pic2;
+    $twin->save();
+
+    //Devolver el twin generado
+    return $response->withJson($twin);
 
     //RECIBIMOS TODA LA INFORMACION DE LA APP
     //CAMBIAMOS DECODIFICAMOS LA FOTO Y LA GUARDAMOS EN EL DIRECTORIO
@@ -66,18 +96,4 @@ $app->post('/pic/enviar',function($picRecibido, $response){
     );
     return $response->withJson($twin);
     */
-    $picLocal = new Pic();
-    $picLocal-> deviceId = $picRecibido->deviceId;
-    $picLocal-> url = "foto1.jpg";
-    $picLocal-> save();
-
-    $randomPic = Pic::inRandomOrder()
-        ->first();
-
-    $twin = new Twin();
-    $twin-> local = $picLocal;
-    $twin-> remote = $randomPic;
-    $twin-> save();
-
-    return $response->withJson($twin);
 });
