@@ -8,13 +8,6 @@ $app->get('/[{name}]', function ($request, $response, $args) {
     return $this->renderer->render($response, 'index.phtml', $args);
 });
 
-
-class Order extends Illuminate\Database\Eloquent\Model {
-
-    protected $fillable = ['title'];
-    public $timestamps = false;
-}
-
 class Pic extends Illuminate\Database\Eloquent\Model {
     public $timestamps = false;
 }
@@ -37,16 +30,16 @@ $app->post('/pic/enviar',function($request, $response, $args){
     $imagen = $request->getParam('imagen');
     $img = base64_decode($imagen);
     //Crear archivo de imagen
-    $archivo = $request->getParam('deviceId').$request->getParam('fecha');
+    $date = new DateTime();
+    $archivo = $request->getParam('deviceId').$date->getTimestamp();
     $path = 'imagenes/'.$archivo.".png";
     $file = fopen($path,'wb');
     fwrite($file, $img);
     fclose($file);
-
     //Ingreso de pic a la base de datos
     $pic = new Pic();
     $pic -> deviceId = $request->getParam('deviceId');
-    $pic -> fecha = $request->getParam('fecha');
+    $pic -> fecha = date('d-m-Y H:i:s');
     $pic -> url = $path;
     $pic -> latitude = $request->getParam('latitude');
     $pic -> longitude = $request->getParam('longitude');
@@ -56,44 +49,24 @@ $app->post('/pic/enviar',function($request, $response, $args){
     $pic -> imagen = $request->getParam('imagen');
     $pic -> save();
 
+    //SELECCION DE ID ULTIMO PIC
+    $ultimoPic = Pic::select("id")
+        ->orderBy("id","desc")
+        ->limit("1")->first();
 
-    //Seleccionar un pic al azar
-    $random = mt_rand(1, 10);
-    $pic2 = Pic::first();
+    //SELECCIONAR PIC SEGUN LOS MENOS ENVIADOS
+    $pic2 = Pic::where('deviceId','!=',$pic->deviceId)
+        ->inRandomOrder()
+        ->first();
+
     //Armar el twin entre ambos pic
     $twin = new Twin();
     $twin->local = $pic;
     $twin->remote = $pic2;
+    $twin->idUsuario = $ultimoPic->id;
+    $twin->idPareja = $pic2->id;
     $twin->save();
 
     //Devolver el twin generado
     return $response->withJson($twin);
-
-    //RECIBIMOS TODA LA INFORMACION DE LA APP
-    //CAMBIAMOS DECODIFICAMOS LA FOTO Y LA GUARDAMOS EN EL DIRECTORIO
-
-    /*
-    $pic = new Pic();
-    $pic -> deviceid = "12345";
-    $pic -> url = "foto3.jpg";
-    $pic -> save();
-
-    $randomPic = Pic::inRandomOrder()
-        ->first();
-
-
-    $twin = new Twin();
-    $twin -> local = $pic;
-    $twin -> remote = $randomPic;
-    $twin -> save();
-
-    $data = array(
-        'id'=>'116998',
-        'deviceId'=>$response->deviceId,
-        'date'=>'2',
-        'latitude'=>'100',
-        'longitude'=>'200'
-    );
-    return $response->withJson($twin);
-    */
 });
