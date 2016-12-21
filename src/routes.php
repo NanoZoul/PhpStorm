@@ -25,33 +25,18 @@ $app->get('/usuarios/pic',function($request, $response, $args){
 });
 
 $app->post('/reaccion/like',function($request, $response, $args){
-    $id = $request->getBody();
-    $pic = Pic::where('id',$id)->increment('positive');
+    $pic = Pic::find(44)->increment('positive');
     $pic->save();
-
-    $reacciones = array(
-        'likes'=>'3',
-        'dislikes'=>'2',
-        'warning'=>'1'
-    );
-    return $response->write(3);
-
 });
 
 $app->post('/reaccion/warn',function($request, $response, $args){
-    $id = $request->getBody();
-    $pic = Pic::where('id',$id)->increment('warning');
-    $pic->save();
-
-    return $response->write(3);
+    Pic::find('44')->increment('warning');
 });
 
 $app->post('/reaccion/dislike',function($request, $response, $args){
-    $id = $request->getBody();
-    $pic = Pic::where('id',$id)->increment('negative');
+    $pic = Pic::find(44)->increment('negative');
     $pic->save();
 
-    return $response->write(3);
 });
 
 $app->post('/pic/enviar',function($request, $response, $args){
