@@ -24,6 +24,35 @@ $app->get('/usuarios/pic',function($request, $response, $args){
     return $response->withJson($pic);
 });
 
+$app->post('/reaccion/like',function($request, $response, $args){
+    $id = $request->getBody();
+    $pic = Pic::where('id',$id)->increment('positive');
+    $pic->save();
+
+    $reacciones = array(
+        'likes'=>'3',
+        'dislikes'=>'2',
+        'warning'=>'1'
+    );
+    return $response->write(3);
+
+});
+
+$app->post('/reaccion/warn',function($request, $response, $args){
+    $id = $request->getBody();
+    $pic = Pic::where('id',$id)->increment('warning');
+    $pic->save();
+
+    return $response->write(3);
+});
+
+$app->post('/reaccion/dislike',function($request, $response, $args){
+    $id = $request->getBody();
+    $pic = Pic::where('id',$id)->increment('negative');
+    $pic->save();
+
+    return $response->write(3);
+});
 
 $app->post('/pic/enviar',function($request, $response, $args){
     //Decodificar imagen
@@ -54,10 +83,15 @@ $app->post('/pic/enviar',function($request, $response, $args){
         ->orderBy("id","desc")
         ->limit("1")->first();
 
+    //Guardar nuevo id en el pic creado
+    $pic -> idRemota = $ultimoPic->id;
+    $pic -> save();
     //SELECCIONAR PIC SEGUN LOS MENOS ENVIADOS
     $pic2 = Pic::where('deviceId','!=',$pic->deviceId)
         ->inRandomOrder()
         ->first();
+
+    $pic2-> idRemota = $pic2->id;
 
     //Armar el twin entre ambos pic
     $twin = new Twin();
